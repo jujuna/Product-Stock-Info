@@ -20,7 +20,6 @@ patch(Many2OneField.prototype, {
         }
 
         const currentModel = this.props.record.resModel;
-        console.log("STOCK POPUP: Checking model - currentModel =", currentModel);
 
         return ALLOWED_MODELS.includes(currentModel);
     },
@@ -28,10 +27,7 @@ patch(Many2OneField.prototype, {
     setup() {
         super.setup(...arguments);
 
-        console.log("STOCK POPUP: setup called, relation =", this.relation);
-
         if (this._isAllowedModel()) {
-            console.log("STOCK POPUP: Initializing for product.product field in allowed model");
             this.orm = useService("orm");
             this.stockPopover = usePopover(ProductStockPopover, {
                 position: "right",
@@ -40,12 +36,10 @@ patch(Many2OneField.prototype, {
             this._isMouseOver = false;
 
             onMounted(() => {
-                console.log("STOCK POPUP: onMounted called");
                 this._setupPopoverEvents();
             });
 
             onWillUnmount(() => {
-                console.log("STOCK POPUP: onWillUnmount called");
                 this._cleanupPopoverEvents();
             });
         }
@@ -54,9 +48,6 @@ patch(Many2OneField.prototype, {
     _setupPopoverEvents() {
         // Find the component's root element
         const el = this.__owl__?.bdom?.el;
-        console.log("STOCK POPUP: _setupPopoverEvents, el =", el);
-        console.log("STOCK POPUP: __owl__ =", this.__owl__);
-        console.log("STOCK POPUP: bdom =", this.__owl__?.bdom);
 
         if (el) {
             this._popoverEl = el;
@@ -64,7 +55,6 @@ patch(Many2OneField.prototype, {
             this._onMouseLeaveBound = this._handleMouseLeave.bind(this);
             el.addEventListener("mouseenter", this._onMouseEnterBound, true);
             el.addEventListener("mouseleave", this._onMouseLeaveBound, true);
-            console.log("STOCK POPUP: Events attached to element");
         } else {
             console.log("STOCK POPUP: No element found!");
         }
@@ -84,8 +74,6 @@ patch(Many2OneField.prototype, {
         if (!this._isAllowedModel()) {
             return;
         }
-
-        console.log("STOCK POPUP: Mouse enter!", ev.target);
         if (this._popoverTimeout) {
             clearTimeout(this._popoverTimeout);
         }
@@ -93,21 +81,16 @@ patch(Many2OneField.prototype, {
 
         this._popoverTimeout = setTimeout(async () => {
             const value = this.value;
-            console.log("STOCK POPUP: Timeout fired, value =", value);
             if (!value || !value[0]) {
-                console.log("STOCK POPUP: No value, returning");
                 return;
             }
             const productId = value[0];
-            console.log("STOCK POPUP: Fetching stock for product ID:", productId);
             try {
                 const stockInfo = await this.orm.call(
                     "product.product",
                     "get_stock_info_for_popup",
                     [productId]
                 );
-                console.log("STOCK POPUP: Got stock info:", stockInfo);
-
                 if (this._isMouseOver) {
                     console.log("STOCK POPUP: Opening popover");
                     this.stockPopover.open(targetElement, {
@@ -115,7 +98,6 @@ patch(Many2OneField.prototype, {
                     });
                 }
             } catch (error) {
-                console.error("STOCK POPUP: Error fetching stock info:", error);
             }
         }, 300);
 
@@ -126,8 +108,6 @@ patch(Many2OneField.prototype, {
         if (!this._isAllowedModel()) {
             return;
         }
-
-        console.log("STOCK POPUP: Mouse leave!");
         this._isMouseOver = false;
         if (this._popoverTimeout) {
             clearTimeout(this._popoverTimeout);
