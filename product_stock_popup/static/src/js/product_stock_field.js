@@ -8,6 +8,12 @@ import { patch } from "@web/core/utils/patch";
 import { useEffect, onMounted, onWillUnmount } from "@odoo/owl";
 import { ListRenderer } from "@web/views/list/list_renderer";
 
+const ALLOWED_MODELS = [
+    "purchase.order.line",
+    "sale.order.line",
+    "account.move.line"
+];
+
 const boundElements = new WeakSet();
 
 patch(Many2OneField.prototype, {
@@ -15,9 +21,11 @@ patch(Many2OneField.prototype, {
         super.setup(...arguments);
 
         const isProductField = this.relation === "product.product";
+        const currentModel = this.props.record?.resModel;
+        const isAllowedModel = currentModel && ALLOWED_MODELS.includes(currentModel);
 
         try {
-            if (isProductField) {
+            if (isProductField && isAllowedModel) {
                 this.ormService = useService("orm");
                 this.stockPopover = usePopover(ProductStockPopover, {
                     position: "right",
@@ -203,6 +211,11 @@ patch(ListRenderer.prototype, {
 
     _handleStockPopupMouseEnter(ev) {
         try {
+            const currentModel = this.props.list?.resModel;
+            if (!currentModel || !ALLOWED_MODELS.includes(currentModel)) {
+                return;
+            }
+
             const target = ev.target;
             const cell = target.closest("td.o_data_cell");
             if (!cell) return;

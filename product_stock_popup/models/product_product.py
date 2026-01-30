@@ -28,7 +28,7 @@ class ProductProduct(models.Model):
 
         product_data = product_data[0]
 
-        quant_groups = self.env['stock.quant'].read_group(
+        quant_groups = self.env['stock.quant'].sudo().read_group(
             domain=[
                 ('product_id', '=', product_id),
                 ('location_id.usage', '=', 'internal'),
