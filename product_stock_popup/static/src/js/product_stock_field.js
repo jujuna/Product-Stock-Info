@@ -7,14 +7,31 @@ import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 import { onMounted, onWillUnmount } from "@odoo/owl";
 
+const ALLOWED_MODELS = [
+    "purchase.order.line",
+    "sale.order.line",
+    "account.move.line"
+];
+
 patch(Many2OneField.prototype, {
+    _isAllowedModel() {
+        if (this.relation !== "product.product") {
+            return false;
+        }
+
+        const currentModel = this.props.record.resModel;
+        console.log("STOCK POPUP: Checking model - currentModel =", currentModel);
+
+        return ALLOWED_MODELS.includes(currentModel);
+    },
+
     setup() {
         super.setup(...arguments);
 
         console.log("STOCK POPUP: setup called, relation =", this.relation);
 
-        if (this.relation === "product.product") {
-            console.log("STOCK POPUP: Initializing for product.product field");
+        if (this._isAllowedModel()) {
+            console.log("STOCK POPUP: Initializing for product.product field in allowed model");
             this.orm = useService("orm");
             this.stockPopover = usePopover(ProductStockPopover, {
                 position: "right",
@@ -64,6 +81,10 @@ patch(Many2OneField.prototype, {
     },
 
     async _handleMouseEnter(ev) {
+        if (!this._isAllowedModel()) {
+            return;
+        }
+
         console.log("STOCK POPUP: Mouse enter!", ev.target);
         if (this._popoverTimeout) {
             clearTimeout(this._popoverTimeout);
@@ -102,6 +123,10 @@ patch(Many2OneField.prototype, {
     },
 
     _handleMouseLeave() {
+        if (!this._isAllowedModel()) {
+            return;
+        }
+
         console.log("STOCK POPUP: Mouse leave!");
         this._isMouseOver = false;
         if (this._popoverTimeout) {
